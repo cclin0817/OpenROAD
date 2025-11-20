@@ -15,7 +15,6 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import numpy as np
@@ -40,6 +39,7 @@ class ThreeDBloxViewer:
         # Data storage
         self.data: Optional[DbxData | DbvData] = None
         self.current_file: Optional[Path] = None
+        self.chiplet_defs: dict[str, ChipletDef] = {}  # Chiplet definitions (from .3dbv or included files)
         self.chiplet_artists = {}  # Maps chiplet name to artist objects
         self.chiplet_visibility = {}  # Maps chiplet name to visibility state
         self.selected_chiplet: Optional[str] = None
@@ -171,6 +171,9 @@ class ThreeDBloxViewer:
             self.data = parse(filename)
             self.logger.info(f"Loaded file: {filename}")
 
+            # Load chiplet definitions
+            self._load_chiplet_defs()
+
             # Reset state
             self.selected_chiplet = None
             self.measurement_points = []
@@ -210,6 +213,33 @@ class ThreeDBloxViewer:
             self.file_info_text.insert(1.0, "No file loaded.\nUse File menu to open a .3dbx or .3dbv file.")
 
         self.file_info_text.config(state=tk.DISABLED)
+
+    def _load_chiplet_defs(self):
+        """Load chiplet definitions from the current data.
+
+        For .3dbv files, use the chiplet_defs directly.
+        For .3dbx files, parse included .3dbv files to get chiplet definitions.
+        """
+        self.chiplet_defs.clear()
+
+        if isinstance(self.data, DbvData):
+            # For .3dbv files, use the chiplet definitions directly
+            self.chiplet_defs = self.data.chiplet_defs.copy()
+        elif isinstance(self.data, DbxData):
+            # For .3dbx files, parse included files to get chiplet definitions
+            if self.data.header.includes and self.current_file:
+                for include_file in self.data.header.includes:
+                    try:
+                        # Resolve relative paths
+                        include_path = self.current_file.parent / include_file
+                        if include_path.exists():
+                            self.logger.info(f"Loading chiplet definitions from {include_path}")
+                            dbv_data = parse_dbv(include_path)
+                            self.chiplet_defs.update(dbv_data.chiplet_defs)
+                        else:
+                            self.logger.warning(f"Included file not found: {include_path}")
+                    except Exception as e:
+                        self.logger.error(f"Failed to load included file {include_file}: {e}")
 
     def _update_chiplet_list(self):
         """Update the chiplet list with checkboxes."""
@@ -281,6 +311,17 @@ class ThreeDBloxViewer:
                 details += f"Reference: {inst.reference}\n"
                 details += f"Position: ({inst.loc.x:.2f}, {inst.loc.y:.2f}, {inst.z:.2f}) μm\n"
                 details += f"Orientation: {inst.orient}\n"
+
+                # Add chiplet definition details if available
+                if inst.reference in self.chiplet_defs:
+                    chiplet_def = self.chiplet_defs[inst.reference]
+                    details += f"\nChiplet Definition:\n"
+                    details += f"  Type: {chiplet_def.type}\n"
+                    details += f"  Dimensions: {chiplet_def.design_width:.2f} × {chiplet_def.design_height:.2f} μm\n"
+                    details += f"  Thickness: {chiplet_def.thickness:.2f} μm\n"
+                    if chiplet_def.regions:
+                        details += f"  Regions: {len(chiplet_def.regions)}\n"
+
                 details += f"\nExternal Files:\n"
                 if inst.external.verilog_file:
                     details += f"  Verilog: {inst.external.verilog_file}\n"
@@ -351,11 +392,19 @@ class ThreeDBloxViewer:
             if name in self.chiplet_visibility and not self.chiplet_visibility[name].get():
                 continue
 
-            # For .3dbx files, we need to get dimensions from referenced chiplet
-            # For now, use placeholder dimensions
+            # Get dimensions from referenced chiplet definition
             width = 1000.0  # Default width
             height = 1000.0  # Default height
             thickness = 100.0  # Default thickness
+
+            if inst.reference in self.chiplet_defs:
+                chiplet_def = self.chiplet_defs[inst.reference]
+                if chiplet_def.design_width > 0:
+                    width = chiplet_def.design_width
+                if chiplet_def.design_height > 0:
+                    height = chiplet_def.design_height
+                if chiplet_def.thickness > 0:
+                    thickness = chiplet_def.thickness
 
             x = inst.loc.x
             y = inst.loc.y
@@ -376,7 +425,7 @@ class ThreeDBloxViewer:
             cz = z + thickness / 2
             self.ax.text(cx, cy, cz, name, fontsize=9, ha='center', va='center', weight='bold' if name == self.selected_chiplet else 'normal')
 
-            self.chiplet_artists[name] = poly
+            self.chiplet_artists[name] = (poly, width, height, thickness)  # Store dimensions for later use
 
         # Render connections
         self._render_connections()
@@ -413,7 +462,7 @@ class ThreeDBloxViewer:
             cz = z + thickness / 2
             self.ax.text(cx, cy, cz, name, fontsize=9, ha='center', va='center', weight='bold' if name == self.selected_chiplet else 'normal')
 
-            self.chiplet_artists[name] = poly
+            self.chiplet_artists[name] = (poly, width, height, thickness)  # Store dimensions for later use
 
             # Render regions
             self._render_regions(chiplet, z, thickness)
@@ -458,6 +507,10 @@ class ThreeDBloxViewer:
                 top_parts = conn.top.split('.')
                 bot_parts = conn.bot.split('.')
 
+                # Handle virtual connections (indicated by ~)
+                if conn.top == '~' or conn.bot == '~':
+                    continue
+
                 if len(top_parts) >= 1 and len(bot_parts) >= 1:
                     top_inst_name = top_parts[0]
                     bot_inst_name = bot_parts[0]
@@ -466,9 +519,29 @@ class ThreeDBloxViewer:
                     bot_inst = self.data.chiplet_instances.get(bot_inst_name)
 
                     if top_inst and bot_inst:
-                        # Draw connection line
-                        x1, y1, z1 = bot_inst.loc.x + 500, bot_inst.loc.y + 500, bot_inst.z + 100
-                        x2, y2, z2 = top_inst.loc.x + 500, top_inst.loc.y + 500, top_inst.z
+                        # Get chiplet dimensions
+                        top_dims = self.chiplet_artists.get(top_inst_name)
+                        bot_dims = self.chiplet_artists.get(bot_inst_name)
+
+                        # Use center of chiplets, with proper dimensions
+                        if top_dims and len(top_dims) == 4:
+                            _, top_w, top_h, top_t = top_dims
+                        else:
+                            top_w, top_h, top_t = 1000.0, 1000.0, 100.0
+
+                        if bot_dims and len(bot_dims) == 4:
+                            _, bot_w, bot_h, bot_t = bot_dims
+                        else:
+                            bot_w, bot_h, bot_t = 1000.0, 1000.0, 100.0
+
+                        # Draw connection line from top of bottom chiplet to bottom of top chiplet
+                        x1 = bot_inst.loc.x + bot_w / 2
+                        y1 = bot_inst.loc.y + bot_h / 2
+                        z1 = bot_inst.z + bot_t  # Top surface of bottom chiplet
+
+                        x2 = top_inst.loc.x + top_w / 2
+                        y2 = top_inst.loc.y + top_h / 2
+                        z2 = top_inst.z  # Bottom surface of top chiplet
 
                         self.ax.plot([x1, x2], [y1, y2], [z1, z2],
                                    color='blue', linewidth=2, linestyle='--', alpha=0.7, label=name)

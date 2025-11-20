@@ -1,0 +1,67 @@
+# Test chiplet definitions file
+# This file defines multiple chiplets with different characteristics
+
+Header:
+  version: 2.5
+  unit: micron
+  precision: 2000
+
+ChipletDef:
+  CPU:
+    type: die
+    design_area: [1200, 1500]
+    shrink: 1
+    tsv: true
+    thickness: 50
+    offset: [0, 0]
+    regions:
+      top_surface:
+        side: front
+        layer: M1
+        coords:
+          - [100, 100]
+          - [1100, 100]
+          - [1100, 1400]
+          - [100, 1400]
+      bottom_surface:
+        side: back
+        layer: UBM
+        coords:
+          - [0, 0]
+          - [1200, 0]
+          - [1200, 1500]
+          - [0, 1500]
+
+  Memory:
+    type: die
+    design_area: [800, 1000]
+    shrink: 1
+    tsv: false
+    thickness: 75
+    offset: [0, 0]
+    regions:
+      bump_array:
+        side: front
+        layer: UBM
+        coords:
+          - [50, 50]
+          - [750, 50]
+          - [750, 950]
+          - [50, 950]
+
+  IO_Die:
+    type: interposer
+    design_area: [1500, 1800]
+    shrink: 1
+    tsv: true
+    thickness: 100
+    offset: [0, 0]
+    regions:
+      connection_area:
+        side: front
+        layer: RDL
+        coords:
+          - [200, 200]
+          - [1300, 200]
+          - [1300, 1600]
+          - [200, 1600]

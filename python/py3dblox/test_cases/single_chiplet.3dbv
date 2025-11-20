@@ -1,0 +1,56 @@
+# Test .3dbv file - Single chiplet with detailed regions
+# This file can be loaded directly to view a single chiplet
+
+Header:
+  version: 2.5
+  unit: micron
+  precision: 2000
+
+ChipletDef:
+  TestChip:
+    type: die
+    design_area: [2000, 2500]
+    shrink: 1
+    tsv: true
+    thickness: 200
+    offset: [100, 100]
+    seal_ring_left: 20
+    seal_ring_bottom: 20
+    seal_ring_right: 20
+    seal_ring_top: 20
+    regions:
+      core_area:
+        side: front
+        layer: M5
+        coords:
+          - [200, 200]
+          - [1800, 200]
+          - [1800, 2300]
+          - [200, 2300]
+
+      io_ring:
+        side: front
+        layer: M3
+        coords:
+          - [100, 100]
+          - [1900, 100]
+          - [1900, 2400]
+          - [100, 2400]
+
+      power_grid:
+        side: front
+        layer: M6
+        coords:
+          - [150, 150]
+          - [1850, 150]
+          - [1850, 2350]
+          - [150, 2350]
+
+      bump_pattern:
+        side: back
+        layer: UBM
+        coords:
+          - [300, 300]
+          - [1700, 300]
+          - [1700, 2200]
+          - [300, 2200]
