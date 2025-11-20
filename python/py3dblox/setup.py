@@ -49,10 +49,15 @@ setup(
             "black>=23.0",
             "ruff>=0.1.0",
         ],
+        "viewer": [
+            "matplotlib>=3.5.0",
+            "numpy>=1.20.0",
+        ],
     },
     entry_points={
         "console_scripts": [
             "py3dblox=py3dblox.__main__:main",
+            "py3dblox-viewer=py3dblox.viewer:main",
         ],
     },
     keywords="eda, 3d-ic, chiplet, parser, yaml",

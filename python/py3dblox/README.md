@@ -306,6 +306,103 @@ except FileNotFoundError as e:
     print(f"File not found: {e}")
 ```
 
+## 3D GUI Viewer
+
+`py3dblox` includes an interactive 3D GUI viewer for visualizing chiplet stacking structures.
+
+### Installation with Viewer Support
+
+To use the viewer, install with the `viewer` extras:
+
+```bash
+cd python/py3dblox
+pip install -e ".[viewer]"
+```
+
+This installs the required dependencies:
+- matplotlib >= 3.5.0
+- numpy >= 1.20.0
+
+### Launching the Viewer
+
+#### Command-line Tool
+
+After installation, launch the viewer:
+
+```bash
+py3dblox-viewer
+```
+
+Or use the standalone script:
+
+```bash
+python view_3dblox.py
+```
+
+#### From Python
+
+```python
+import tkinter as tk
+from py3dblox import ThreeDBloxViewer
+
+root = tk.Tk()
+viewer = ThreeDBloxViewer(root)
+root.mainloop()
+```
+
+### Viewer Features
+
+The GUI viewer provides:
+
+- **3D Visualization**: Interactive 3D view of chiplet stacks with rotation, zoom, and pan controls
+- **File Support**: Open both `.3dbx` (design assembly) and `.3dbv` (chiplet definitions) files
+- **Chiplet Details**: Click to select chiplets and view detailed information:
+  - Dimensions (width, height, thickness)
+  - Position and orientation
+  - Region definitions
+  - External file references
+- **Visibility Controls**: Show/hide individual chiplets using checkboxes
+- **Connection Visualization**: View connections between chiplet layers
+- **Region Boundaries**: Display chiplet regions with color-coded outlines
+- **Distance Measurement**: Measure distances between points in the 3D view
+- **Interactive Controls**:
+  - Mouse drag to rotate the view
+  - Scroll to zoom
+  - Navigation toolbar for pan, zoom, and save image
+  - Reset view button to return to default angle
+  - Toggle grid and connection visibility
+
+### Usage Example
+
+1. Launch the viewer:
+   ```bash
+   py3dblox-viewer
+   ```
+
+2. Open a file:
+   - Use `File > Open .3dbx` or `File > Open .3dbv`
+   - Navigate to your 3D Block file
+   - The 3D view will automatically render
+
+3. Interact with the view:
+   - **Rotate**: Click and drag on the 3D view
+   - **Zoom**: Use mouse scroll wheel
+   - **Select**: Click a chiplet name in the list or use the Select button
+   - **Hide/Show**: Use checkboxes next to chiplet names
+   - **Measure**: Click "Measure Distance" and click two points
+
+4. View details:
+   - Select a chiplet to see its properties in the Details panel
+   - File information is displayed in the top-right panel
+
+### Keyboard Shortcuts
+
+- Use the matplotlib navigation toolbar for standard controls
+- Pan mode: Click the pan icon or press 'p'
+- Zoom mode: Click the zoom icon or press 'o'
+- Home view: Click the home icon or press 'h'
+- Save image: Click the save icon or press 's'
+
 ## Development
 
 ### Running Tests
