@@ -113,7 +113,8 @@ class DbxParser(BaseParser):
         if 'name' not in design_node:
             self.log_error("DBX Design name is required")
 
-        design = DesignDef(name=str(design_node['name']))
+        name = self.extract_value(design_node, 'name', str)
+        design = DesignDef(name=name if name is not None else "")
 
         if 'external' in design_node:
             design.external = self._parse_design_external(design_node['external'])
@@ -132,7 +133,9 @@ class DbxParser(BaseParser):
         external = DesignExternal()
 
         if 'verilog_file' in external_node:
-            external.verilog_file = str(self.resolve_path(external_node['verilog_file']))
+            verilog_file = self.extract_value(external_node, 'verilog_file', str)
+            if verilog_file is not None:
+                external.verilog_file = str(self.resolve_path(verilog_file))
 
         return external
 
@@ -167,7 +170,8 @@ class DbxParser(BaseParser):
         if 'reference' not in instance_node:
             self.log_error(f"DBX ChipletInst reference is required for instance {instance.name}")
 
-        instance.reference = str(instance_node['reference'])
+        reference = self.extract_value(instance_node, 'reference', str)
+        instance.reference = reference if reference is not None else ""
 
         if 'external' in instance_node:
             instance.external = self._parse_chiplet_inst_external(instance_node['external'])
@@ -184,13 +188,19 @@ class DbxParser(BaseParser):
         external = ChipletInstExternal()
 
         if 'verilog_file' in external_node:
-            external.verilog_file = str(self.resolve_path(external_node['verilog_file']))
+            verilog_file = self.extract_value(external_node, 'verilog_file', str)
+            if verilog_file is not None:
+                external.verilog_file = str(self.resolve_path(verilog_file))
 
         if 'sdc_file' in external_node:
-            external.sdc_file = str(self.resolve_path(external_node['sdc_file']))
+            sdc_file = self.extract_value(external_node, 'sdc_file', str)
+            if sdc_file is not None:
+                external.sdc_file = str(self.resolve_path(sdc_file))
 
         if 'def_file' in external_node:
-            external.def_file = str(self.resolve_path(external_node['def_file']))
+            def_file = self.extract_value(external_node, 'def_file', str)
+            if def_file is not None:
+                external.def_file = str(self.resolve_path(def_file))
 
         return external
 
@@ -240,7 +250,8 @@ class DbxParser(BaseParser):
         if 'orient' not in stack_instance_node:
             self.log_error(f"DBX Stack orientation is required for instance {instance.name}")
 
-        instance.orient = str(stack_instance_node['orient'])
+        orient = self.extract_value(stack_instance_node, 'orient', str)
+        instance.orient = orient if orient is not None else ""
 
     def _parse_connections(self, connections_node: dict[str, Any]) -> dict[str, Connection]:
         """Parse Connection section.
@@ -273,12 +284,13 @@ class DbxParser(BaseParser):
         if 'top' not in connection_node:
             self.log_error(f"DBX Connection top is required for connection {connection.name}")
 
-        connection.top = str(connection_node['top'])
+        connection.top = self.extract_value(connection_node, 'top', str)
 
+        # Parse bot region (required, can be null/~)
         if 'bot' not in connection_node:
             self.log_error(f"DBX Connection bot is required for connection {connection.name}")
 
-        connection.bot = str(connection_node['bot'])
+        connection.bot = self.extract_value(connection_node, 'bot', str)
 
         if 'thickness' in connection_node:
             connection.thickness = float(connection_node['thickness'])

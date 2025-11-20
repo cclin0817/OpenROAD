@@ -120,7 +120,8 @@ class DbvParser(BaseParser):
         if 'type' not in chiplet_node:
             self.log_error(f"Chiplet type is required for chiplet {chiplet.name}")
 
-        chiplet.type = str(chiplet_node['type'])
+        chiplet_type = self.extract_value(chiplet_node, 'type', str)
+        chiplet.type = chiplet_type if chiplet_type is not None else ""
 
         # Parse design_area [width, height]
         if 'design_area' in chiplet_node:
@@ -203,19 +204,26 @@ class DbvParser(BaseParser):
             region_node: YAML node for this region.
         """
         if 'bmap' in region_node:
-            region.bmap = str(self.resolve_path(region_node['bmap']))
+            bmap = self.extract_value(region_node, 'bmap', str)
+            if bmap is not None:
+                region.bmap = str(self.resolve_path(bmap))
 
         if 'pmap' in region_node:
-            region.pmap = str(self.resolve_path(region_node['pmap']))
+            pmap = self.extract_value(region_node, 'pmap', str)
+            if pmap is not None:
+                region.pmap = str(self.resolve_path(pmap))
 
         if 'side' in region_node:
-            region.side = str(region_node['side'])
+            side = self.extract_value(region_node, 'side', str)
+            region.side = side if side is not None else ""
 
         if 'layer' in region_node:
-            region.layer = str(region_node['layer'])
+            layer = self.extract_value(region_node, 'layer', str)
+            region.layer = layer if layer is not None else ""
 
         if 'gds_layer' in region_node:
-            region.gds_layer = str(region_node['gds_layer'])
+            gds_layer = self.extract_value(region_node, 'gds_layer', str)
+            region.gds_layer = gds_layer if gds_layer is not None else ""
 
         if 'coords' in region_node:
             region.coords = self.parse_coordinates(region_node['coords'])
@@ -261,6 +269,8 @@ class DbvParser(BaseParser):
 
         # Parse DEF file
         if 'DEF_file' in external_node:
-            external.def_file = str(self.resolve_path(external_node['DEF_file']))
+            def_file = self.extract_value(external_node, 'DEF_file', str)
+            if def_file is not None:
+                external.def_file = str(self.resolve_path(def_file))
 
         return external
