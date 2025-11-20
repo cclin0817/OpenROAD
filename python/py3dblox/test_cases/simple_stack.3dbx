@@ -1,0 +1,44 @@
+# Test .3dbx file - Simple 3D stack with 2 chiplets
+# This file demonstrates a basic CPU-Memory stack
+
+Header:
+  version: "1.0"
+  unit: "micron"
+  precision: 2000
+  include:
+    - chiplets.3dbv
+
+Design:
+  name: "SimpleStack"
+  external:
+    verilog_file: "simple_stack.v"
+
+ChipletInst:
+  cpu_0:
+    reference: CPU
+    external:
+      verilog_file: "cpu.v"
+      sdc_file: "cpu.sdc"
+
+  mem_0:
+    reference: Memory
+    external:
+      verilog_file: "memory.v"
+      sdc_file: "memory.sdc"
+
+Stack:
+  cpu_0:
+    loc: [150.0, 150.0]
+    z: 0.0
+    orient: R0
+
+  mem_0:
+    loc: [350.0, 400.0]
+    z: 50.0
+    orient: R0
+
+Connection:
+  cpu_to_mem:
+    top: mem_0.regions.bump_array
+    bot: cpu_0.regions.top_surface
+    thickness: 5.0

@@ -60,6 +60,14 @@ from .objects import (
 # Import exceptions
 from .base_parser import ParserError
 
+# Optional: Import viewer (requires matplotlib)
+try:
+    from .viewer import ThreeDBloxViewer
+    _viewer_available = True
+except ImportError:
+    _viewer_available = False
+    ThreeDBloxViewer = None
+
 __all__ = [
     # Version
     "__version__",
@@ -90,4 +98,6 @@ __all__ = [
     "BumpMapEntry",
     # Exceptions
     "ParserError",
+    # Viewer (optional)
+    "ThreeDBloxViewer",
 ]

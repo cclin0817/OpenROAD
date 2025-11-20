@@ -1,0 +1,89 @@
+# Test .3dbx file - Complex 3D stack with multiple chiplets
+# This file demonstrates a multi-layer heterogeneous integration
+
+Header:
+  version: "1.0"
+  unit: "micron"
+  precision: 2000
+  include:
+    - chiplets.3dbv
+
+Design:
+  name: "ComplexHeteroStack"
+  external:
+    verilog_file: "complex_stack.v"
+
+ChipletInst:
+  io_base:
+    reference: IO_Die
+    external:
+      verilog_file: "io_die.v"
+
+  cpu_0:
+    reference: CPU
+    external:
+      verilog_file: "cpu_0.v"
+      sdc_file: "cpu_0.sdc"
+
+  cpu_1:
+    reference: CPU
+    external:
+      verilog_file: "cpu_1.v"
+      sdc_file: "cpu_1.sdc"
+
+  mem_0:
+    reference: Memory
+    external:
+      verilog_file: "memory_0.v"
+
+  mem_1:
+    reference: Memory
+    external:
+      verilog_file: "memory_1.v"
+
+Stack:
+  io_base:
+    loc: [0.0, 0.0]
+    z: 0.0
+    orient: R0
+
+  cpu_0:
+    loc: [150.0, 300.0]
+    z: 100.0
+    orient: R0
+
+  cpu_1:
+    loc: [150.0, 300.0]
+    z: 150.0
+    orient: MZ
+
+  mem_0:
+    loc: [100.0, 50.0]
+    z: 225.0
+    orient: R90
+
+  mem_1:
+    loc: [900.0, 50.0]
+    z: 225.0
+    orient: R270
+
+Connection:
+  io_to_cpu0:
+    top: cpu_0.regions.bottom_surface
+    bot: io_base.regions.connection_area
+    thickness: 10.0
+
+  cpu0_to_cpu1:
+    top: cpu_1.regions.bottom_surface
+    bot: cpu_0.regions.top_surface
+    thickness: 2.0
+
+  cpu1_to_mem0:
+    top: mem_0.regions.bump_array
+    bot: cpu_1.regions.top_surface
+    thickness: 5.0
+
+  cpu1_to_mem1:
+    top: mem_1.regions.bump_array
+    bot: cpu_1.regions.top_surface
+    thickness: 5.0
