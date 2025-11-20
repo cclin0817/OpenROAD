@@ -182,10 +182,12 @@ class BaseParser:
         header = Header()
 
         if 'version' in header_node:
-            header.version = str(header_node['version'])
+            version = self.extract_value(header_node, 'version', str)
+            header.version = version if version is not None else ""
 
         if 'unit' in header_node:
-            header.unit = str(header_node['unit'])
+            unit = self.extract_value(header_node, 'unit', str)
+            header.unit = unit if unit is not None else ""
 
         if 'precision' in header_node:
             header.precision = int(header_node['precision'])
@@ -194,7 +196,9 @@ class BaseParser:
             includes = header_node['include']
             if isinstance(includes, list):
                 for include in includes:
-                    header.includes.extend(self.resolve_paths(str(include)))
+                    include_str = str(include) if include is not None else ""
+                    if include_str:
+                        header.includes.extend(self.resolve_paths(include_str))
 
         return header
 
@@ -207,7 +211,7 @@ class BaseParser:
             value_type: Expected type to convert to.
 
         Returns:
-            Extracted value of specified type.
+            Extracted value of specified type, or None if the value is null.
 
         Raises:
             ParserError: If value extraction or conversion fails.
@@ -217,6 +221,9 @@ class BaseParser:
 
         try:
             value = node[key]
+            # Preserve None values instead of converting to string "None"
+            if value is None:
+                return None
             if value_type == list:
                 return list(value) if isinstance(value, (list, tuple)) else [value]
             return value_type(value)

@@ -120,8 +120,8 @@ class ChipletInst:
 class Connection:
     """Connection between chiplet regions."""
     name: str = ""
-    top: str = ""
-    bot: str = ""
+    top: str | None = ""
+    bot: str | None = ""
     thickness: float = 0.0
 
 
